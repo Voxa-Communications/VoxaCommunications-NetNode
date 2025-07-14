@@ -59,6 +59,7 @@ Attribution-NonCommercial-ShareAlike 4.0 International
 
 Let's build the future of decentralized communication together! 🚀r Secure Communication
 
+![Static Badge](https://img.shields.io/badge/telegram-voxacommunications-blue?link=https%3A%2F%2Ft.me%2Fvoxacommunications)
 ![TravisBuild](https://app.travis-ci.com/Voxa-Communications/VoxaCommunications-NetNode.svg)
 [![Application Startup](https://github.com/Voxa-Communications/VoxaCommunications-NetNode/actions/workflows/test-run.yml/badge.svg)](https://github.com/Voxa-Communications/VoxaCommunications-NetNode/actions/workflows/test-run.yml)
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/Voxa-Communications)
