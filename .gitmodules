@@ -1,0 +1,3 @@
+[submodule "stellaris"]
+	path = src/lib/VoxaCommunications_Router/stellaris
+	url = https://github.com/StellarisChain/stellaris

@@ -10,9 +10,9 @@ from pathlib import Path
 
 import pickledb
 
-from lib.VoxaCommunications_Router.stellaris.constants import MAX_BLOCK_SIZE_HEX, SMALLEST
-from lib.VoxaCommunications_Router.stellaris.utils.general import sha256, point_to_string, string_to_point, point_to_bytes, AddressFormat, normalize_block
-from lib.VoxaCommunications_Router.stellaris.transactions import Transaction, CoinbaseTransaction, TransactionInput
+from stellaris.constants import MAX_BLOCK_SIZE_HEX, SMALLEST
+from stellaris.utils.general import sha256, point_to_string, string_to_point, point_to_bytes, AddressFormat, normalize_block
+from stellaris.transactions import Transaction, CoinbaseTransaction, TransactionInput
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 OLD_BLOCKS_TRANSACTIONS_ORDER = pickledb.load(dir_path + '/old_block_transactions_order.json', True)
@@ -245,7 +245,8 @@ class Database:
     async def get_need_propagate_transactions(self, last_propagation_delta: int = 600, limit: int = MAX_BLOCK_SIZE_HEX) -> List[Union[Transaction, str]]:
         current_time = datetime.now(timezone.utc)
         pending_txs = list(self._pending_transactions.values())
-        pending_txs.sort(key=lambda tx: (-tx['fees'] / len(tx['tx_hex']), len(tx['tx_hex']), tx['tx_hex']))
+        from decimal import Decimal
+        pending_txs.sort(key=lambda tx: (-Decimal(tx['fees']) / len(tx['tx_hex']), len(tx['tx_hex']), tx['tx_hex']))
         
         return_txs = []
         size = 0
@@ -353,7 +354,7 @@ class Database:
         await self._save_blocks()
         
         # Clear difficulty cache
-        from lib.VoxaCommunications_Router.stellaris.manager import Manager
+        from stellaris.manager import Manager
         Manager.difficulty = None
 
     async def get_transaction(self, tx_hash: str, check_signatures: bool = True) -> Union[Transaction, CoinbaseTransaction]:

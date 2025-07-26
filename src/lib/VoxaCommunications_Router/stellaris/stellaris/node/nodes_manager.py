@@ -6,8 +6,8 @@ from random import sample
 import httpx
 import pickledb
 
-from lib.VoxaCommunications_Router.stellaris.constants import MAX_BLOCK_SIZE_HEX
-from lib.VoxaCommunications_Router.stellaris.utils.general import timestamp
+from stellaris.constants import MAX_BLOCK_SIZE_HEX
+from stellaris.utils.general import timestamp
 
 ACTIVE_NODES_DELTA = 60 * 60 * 24 * 7  # 7 days
 INACTIVE_NODES_DELTA = 60 * 60 * 24 * 90  # 3 months
@@ -79,7 +79,7 @@ class NodesManager:
     @staticmethod
     def get_recent_nodes():
         full_nodes = {node_url: NodesManager.get_last_message(node_url) for node_url in NodesManager.get_nodes()}
-        return [item[0] for item in sorted(full_nodes.items(), key=lambda item: item[1], reverse=True) if item[1] > timestamp() - ACTIVE_NODES_DELTA]
+        return [item[0] for item in sorted(full_nodes.items(), key=lambda item: item[1], reverse=True) if (item[1] > timestamp() - ACTIVE_NODES_DELTA) or item[0] == 'https://stellaris-node.connor33341.dev']
 
     @staticmethod
     def get_zero_nodes():
