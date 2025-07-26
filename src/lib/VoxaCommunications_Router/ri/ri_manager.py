@@ -158,6 +158,11 @@ class RIManager:
         if not ri_data:
             self.logger.error(f"No {ri_type} data found to push to bootstrap nodes.")
             return
+    
+        net_manager: NetManager = get_global_net_manager()
+        if not net_manager.ssu_node:
+            raise RuntimeError("SSU Node is not running. Cannot fetch bootstrap RI.")
+        ssu_node: SSUNode = net_manager.ssu_node
         
         for node_addr in self.bootstrap_nodes:
             self.logger.debug(f"Pushing {ri_type} to bootstrap node {node_addr}")
@@ -170,7 +175,7 @@ class RIManager:
                         addr=node_addr,
                         method="POST",
                         endpoint=endpoint,
-                        data=ri_data
+                        str_data=json.dumps(ri_data)
                     )
                     packet.build_data()
                     packet.str_to_raw()
@@ -179,7 +184,7 @@ class RIManager:
                         packet.remove_header()
                     packet.assemble_header(INTERNAL_HTTP_PACKET_HEADER)
                     ssu_request: SSURequest = packet.upgrade_to_ssu_request(generate_request_id=True)
-                    response: SSURequest = asyncio.run(self.registry_manager.ssu_node.send_ssu_request_and_wait(ssu_request, timeout=50))
+                    response: SSURequest = asyncio.run(ssu_node.send_ssu_request_and_wait(ssu_request, timeout=50))
                 case "HTTP":
                     endpoint = f"https://{node_addr}{endpoint}"
                     response: requests.Response = requests.post(endpoint, json=ri_data, timeout=50)
