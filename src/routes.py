@@ -2,10 +2,12 @@ from typing import Optional, Dict, List
 import os
 import importlib
 import inspect
+import traceback
 from fastapi import WebSocket, APIRouter, FastAPI, Response
 #from lib.dynamiclibrary.loader import DynamicLibraryLoader
 #from lib.dynamiclibrary.structs import DynamicLibrary
 from lib.dynamiclibrary import DynamicLibrary, DynamicLibraryLoader
+from util.jsonreader import read_json_from_namespace
 from util.logging import log
 
 class InternalRouter:
@@ -13,6 +15,7 @@ class InternalRouter:
         self.router = APIRouter()
         self.app = app
         self.sub_routers: Dict[str, APIRouter] = {}
+        self.dev_config: dict = read_json_from_namespace("config.dev") or {}
         self.logger = log()
         
     def include_router(self, new_router: APIRouter):
@@ -73,10 +76,37 @@ class InternalRouter:
                             # Register the handler function with the router
                             handler_func = getattr(module, 'handler')
                             endpoint_path = f"/{module_name}/"
-                            sub_router.add_api_route(endpoint_path, handler_func)
-                            self.logger.info(f"Registered endpoint {endpoint_path} for {full_module_path}")
+                            
+                            # Check if response model should be disabled
+                            response_model = True
+                            if hasattr(module, 'ENABLE_RESPONSE_MODEL') and getattr(module, 'ENABLE_RESPONSE_MODEL') is False:
+                                response_model = False
+                                self.logger.info(f"Response model disabled for {full_module_path}")
+
+                            # Disalow the test directory if we are not in debug mode
+                            if dir_name == "test" and not self.dev_config.get("debug", False):
+                                self.logger.info(f"Skipping test directory {dir_name} in non-debug mode")
+                                continue
+
+                            # Determine HTTP method based on module name
+                            if module_name.startswith('add_'):
+                                # POST method for add operations
+                                sub_router.add_api_route(endpoint_path, handler_func, methods=["POST"])
+                                self.logger.info(f"Registered POST endpoint {endpoint_path} for {full_module_path}")
+                            elif module_name.startswith('fetch_') or module_name.startswith('get_'):
+                                # GET method for fetch/get operations  
+                                sub_router.add_api_route(endpoint_path, handler_func, methods=["GET"])
+                                self.logger.info(f"Registered GET endpoint {endpoint_path} for {full_module_path}")
+                            else:
+                                # Default to GET for other endpoints
+                                if response_model:
+                                    sub_router.add_api_route(endpoint_path, handler_func, methods=["GET"])
+                                else:
+                                    sub_router.add_api_route(endpoint_path, handler_func, methods=["GET"], response_model=None)
+                                self.logger.info(f"Registered GET endpoint {endpoint_path} for {full_module_path}")
                         else:
                             self.logger.warning(f"No handler function found in {full_module_path}")
                             
                     except Exception as e:
                         self.logger.error(f"Error loading module {full_module_path}: {str(e)}")
+                        traceback.print_exc()
